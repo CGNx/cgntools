@@ -28,7 +28,7 @@ def similar(a, b):
 
 # In[1]:
 
-def bqutil_df2bq(df, schema, project, dataset, table):
+def bqutil_df2bq(df, schema, project_id, dataset_id, table_id):
     '''Uploads a dataframe to a bigquery table
     Example schema:
         schema = [{'type': 'STRING', 'name': 'cameo_candidate'},
@@ -38,15 +38,15 @@ def bqutil_df2bq(df, schema, project, dataset, table):
         df2bq(df, schema, 'mitx-research', '0_cgn_sample', table)
     '''
     
-    csv_filename = table + '.csv' 
+    csv_filename = table_id + '.csv' 
     df.to_csv(csv_filename, header = True, index = False)
-    schema_filename = table + "__schema.json"
+    schema_filename = table_id + "__schema.json"
     open(schema_filename, 'w').write(json.dumps(schema, indent=4))
     
-    address = project + ':' + dataset + '.' + table
+    address = project_id + ':' + dataset_id + '.' + table_id
     #Remove table first, otherwise it will append
     try:
-        bqutil.delete_bq_table(dataset, table, project)
+        bqutil.delete_bq_table(dataset_id, table_id, project_id)
         print 'Overwriting table:', address
     except:
         print 'Creating table:', address
@@ -60,9 +60,9 @@ def bqutil_df2bq(df, schema, project, dataset, table):
     os.remove(schema_filename)
 
 
-# In[2]:
+# In[1]:
 
-def bqutil_bq2df(dataset_id, table_id , project_id):
+def bqutil_bq2df(project_id, dataset_id, table_id):
     info = bqutil.get_bq_table_info(dataset_id, table_id, project_id)
     megabytes = float(info['numBytes']) / 1.0e6
     print project_id + ':' + dataset_id + '.' + table_id +' is', str(megabytes) + ' Mb and', info['numRows'],'rows'
