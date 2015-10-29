@@ -63,6 +63,10 @@ def bqutil_df2bq(df, schema, project_id, dataset_id, table_id):
 # In[1]:
 
 def bqutil_bq2df(project_id, dataset_id, table_id):
+    '''Downloads a BigQuery Table and stores it in a DataFrame.
+    This method guarantees preservation of column and row orders.
+    Return: A Pandas dataframe.
+    '''
     info = bqutil.get_bq_table_info(dataset_id, table_id, project_id)
     megabytes = float(info['numBytes']) / 1.0e6
     print project_id + ':' + dataset_id + '.' + table_id +' is', str(megabytes) + ' Mb and', info['numRows'],'rows'
@@ -84,6 +88,10 @@ def bqutil_bq2df(project_id, dataset_id, table_id):
 # In[3]:
 
 def bqutil_SQL2df(project_id, SQL, temp_project_id = 'mitx-research', temp_dataset = '0_cgn_sybils', temp_table = 'temp', overwrite = True):
+    '''Executes Google BigQuery SQL and stores the results in a DataFrame.
+    This method guarantees preservation of column and row orders.
+    Return: A Pandas dataframe.
+    '''
     bqutil.create_bq_table(temp_dataset, temp_table, SQL, overwrite = overwrite, project_id = project_id, output_project_id=temp_project_id, allowLargeResults=True)
     return bqutil_bq2df(temp_dataset, temp_table, project_id = temp_project_id)
 
