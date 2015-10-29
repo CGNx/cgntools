@@ -93,7 +93,7 @@ def bqutil_SQL2df(project_id, SQL, temp_project_id = 'mitx-research', temp_datas
     Return: A Pandas dataframe.
     '''
     bqutil.create_bq_table(temp_dataset, temp_table, SQL, overwrite = overwrite, project_id = project_id, output_project_id=temp_project_id, allowLargeResults=True)
-    return bqutil_bq2df(temp_dataset, temp_table, project_id = temp_project_id)
+    return bqutil_bq2df(project_id = temp_project_id, dataset_id = temp_dataset, table_id = temp_table)
 
 
 # In[1]:
