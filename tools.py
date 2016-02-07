@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# ##Modules
+# ## Modules
 
 # In[1]:
 
@@ -24,6 +24,60 @@ def similar(a, b):
     '''
     Computes simlarity of two strings a and b using Python SequenceMatcher'''
     return SequenceMatcher(None, a, b).ratio()
+
+
+# In[11]:
+
+def bqutil_set_project(project_id):
+    if project_id not in ['mitx-research', 'mitx-data', 'harvardx-data']:
+        return
+    f = open("/Users/cgn/Dropbox (MIT)/cgn/bq/edx2bigquery/edx2bigquery/edx2bigquery_config.py", 'w')
+    text = '''PROJECT_ID = "{project_id}"
+auth_key_file = "USE_GCLOUD_AUTH"
+auth_service_acct = None'''.format(project_id=project_id)
+    f.write(text)
+    f.close
+
+
+# In[23]:
+
+def bqutil_get_table(dataset_id, list_of_table_ids, path, gs_folder=None, project_id='mitx-research'):
+    '''
+    Downloads large tables using Google Storage.
+    dataset_id: string of dataset_id, also supports a list of dataset_id strings 
+    gs_folder: Specify a folder if persistent storage in Google Storage is needed. 
+    
+    Need to add support for extracting and combining sharded tables
+    '''
+    
+    persistent = True
+    
+    if gs_folder is None:
+        gs_folder = 'temp'
+        persistent = False
+    
+    if type(dataset_id) == str:
+        list_of_dataset_ids = [dataset_id for i in range(len(list_of_table_ids))]
+    else:
+        list_of_dataset_ids = dataset_id
+        
+    for i in range(len(list_of_table_ids)):
+        table_id = list_of_table_ids[i]
+        dataset_id = list_of_dataset_ids[i]
+        gsfn = 'gs://mitx-research/' + gs_folder + '/' + dataset_id + "_" + table_id + '*.csv.gz'
+        bqutil.extract_table_to_gs(dataset_id=dataset_id, table_id=table_id, gsfn=gsfn, format='csv', do_gzip=True, project_id=project_id)
+   
+    # Download all tables to path
+    gsfn = 'gs://mitx-research/' + gs_folder
+    cmd = "gsutil -m cp -r " + gsfn + " " + path
+    os.system(cmd)
+    
+    if not persistent:
+        #If user did not ask for persitent storage in gs, remove files   
+        cmd = 'gsutil -m rm -r ' + gsfn
+        os.system(cmd)
+    
+    
 
 
 # In[1]:
@@ -80,6 +134,8 @@ def bqutil_bq2df(project_id, dataset_id, table_id):
  
     data = bqutil.get_table_data(dataset_id=dataset_id, table_id = table_id, project_id=project_id, maxResults=5000000)
     print "Download completed in", str(datetime.now() - t)
+    sys.stdout.flush()
+    
     if data is None:
         return pd.DataFrame()
     return pd.DataFrame(data['data'], columns=data['field_names'])
@@ -92,7 +148,7 @@ def bqutil_SQL2df(project_id, SQL, temp_project_id = 'mitx-research', temp_datas
     This method guarantees preservation of column and row orders.
     Return: A Pandas dataframe.
     '''
-    bqutil.create_bq_table(temp_dataset, temp_table, SQL, overwrite = overwrite, project_id = project_id, output_project_id=temp_project_id, allowLargeResults=True)
+    bqutil.create_bq_table(temp_dataset, temp_table, SQL, overwrite = overwrite, project_id = project_id, output_project_id=temp_project_id, allowLargeResults=True, sql_for_description='Created by Curtis G. Northcutt\n' + SQL)
     return bqutil_bq2df(project_id = temp_project_id, dataset_id = temp_dataset, table_id = temp_table)
 
 
